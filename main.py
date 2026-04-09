@@ -44,10 +44,12 @@ async def fetch_real_price(symbol: str):
     try:
         def get_price():
             ticker = yf.Ticker(symbol)
-            data = ticker.history(period="1d", interval="1m")
-            if not data.empty:
-                return data['Close'].iloc[-1]
-            return None
+            price = getattr(ticker.fast_info, 'lastPrice', None)
+            if price is None:
+                data = ticker.history(period="1d")
+                if not data.empty:
+                    price = float(data['Close'].iloc[-1])
+            return price
             
         price = await asyncio.to_thread(get_price)
         if price is not None:

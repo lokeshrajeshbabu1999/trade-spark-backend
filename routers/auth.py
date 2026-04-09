@@ -30,3 +30,12 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout")
+def logout(current_user: models.User = Depends(security.get_current_user)):
+    """
+    A dummy logout endpoint.
+    Since JWT is stateless, actual logout is handled by the frontend 
+    discarding the token. This endpoint simply responds with success.
+    """
+    return {"message": "Successfully logged out"}
