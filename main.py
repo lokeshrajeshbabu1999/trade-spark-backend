@@ -49,27 +49,35 @@ async def fetch_real_price(symbol: str):
                 data = ticker.history(period="1d")
                 if not data.empty:
                     price = float(data['Close'].iloc[-1])
+            
+            if price is None and not symbol.endswith(('.NS', '.BO')):
+                symbol_alt = f"{symbol}.NS"
+                ticker = yf.Ticker(symbol_alt)
+                price = getattr(ticker.fast_info, 'lastPrice', None)
+                if price is None:
+                    data = ticker.history(period="1d")
+                    if not data.empty:
+                        price = float(data['Close'].iloc[-1])
             return price
             
         price = await asyncio.to_thread(get_price)
         if price is not None:
             price_cache[symbol] = price
+            print(f"[YFinance Log] Live price of {symbol} is: ${price:.2f}")
             
         return price_cache.get(symbol, 150.00) # Fallback to cached or default
     except Exception as e:
         print(f"Error fetching {symbol}: {e}")
         return price_cache.get(symbol, 150.00)
 
-@app.websocket("/ws/price_stream")
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket("/ws/price_stream/{symbol}")
+async def websocket_endpoint(websocket: WebSocket, symbol: str):
     await websocket.accept()
-    print("A client connected to the real market data stream!")
-    
-    symbol = "AAPL"
+    print(f"A client connected to the real market data stream for {symbol}!")
     
     try:
         while True:
-            # Fetch the actual real price of Apple stock from the market
+            # Fetch the actual real price of the stock from the market
             current_price = await fetch_real_price(symbol)
             
             await websocket.send_json({
