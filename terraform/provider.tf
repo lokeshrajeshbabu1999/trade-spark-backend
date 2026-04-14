@@ -9,7 +9,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "trade-spark-terraform-state-<977099015153>"
+    bucket         = "trade-spark-terraform-state-977099015153"
     key            = "backend/terraform.tfstate"
     region         = "ap-south-1"
     dynamodb_table = "terraform-lock"
