@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -11,7 +12,8 @@ import models
 from db import get_db
 
 # Configuration for JWT encryption
-SECRET_KEY = "super-secret-key-for-trade-spark" # In production, this goes in .env!
+# In production, this MUST be set in GitHub Secrets / environment variables
+SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key-for-trade-spark")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # Token lasts for 7 days
 

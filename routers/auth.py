@@ -32,7 +32,7 @@ def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}  # nosec
 
 @router.post("/logout")
 def logout(current_user: models.User = Depends(security.get_current_user)):

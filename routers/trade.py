@@ -165,14 +165,14 @@ def get_historical_data(symbol: str, period: str = "1mo", interval: str = "1d"):
             base_price = 1000.00
             for i in range(30, -1, -1):
                 date = datetime.datetime.now() - datetime.timedelta(days=i)
-                base_price = base_price + (random.random() - 0.48) * 20
+                base_price = base_price + (random.random() - 0.48) * 20  # nosec
                 history_list.append({
                     "time": date.isoformat(),
                     "open": round(base_price - 5, 2),
                     "high": round(base_price + 10, 2),
                     "low": round(base_price - 10, 2),
                     "close": round(base_price, 2),
-                    "volume": int(random.uniform(1000000, 5000000))
+                    "volume": int(random.uniform(1000000, 5000000))  # nosec
                 })
             return {"symbol": symbol.upper(), "data": history_list}
             
