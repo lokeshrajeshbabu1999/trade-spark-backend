@@ -8,13 +8,12 @@ terraform {
     }
   }
 
-  # Note: A real 'Big Company' setup would use an S3 backend here.
-  # backend "s3" {
-  #   bucket         = "trade-spark-terraform-state"
-  #   key            = "backend/terraform.tfstate"
-  #   region         = "ap-south-1"
-  #   dynamodb_table = "terraform-lock"
-  # }
+  backend "s3" {
+    bucket         = "trade-spark-terraform-state-<977099015153>"
+    key            = "backend/terraform.tfstate"
+    region         = "ap-south-1"
+    dynamodb_table = "terraform-lock"
+  }
 }
 
 provider "aws" {
