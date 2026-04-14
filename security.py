@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from typing import Optional
-from jose import JWTError, jwt
+
 import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 import models
@@ -20,7 +21,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 def verify_password(plain_password, hashed_password):
     try:
         plain_password_bytes = plain_password.encode('utf-8')
-        hashed_password_bytes = hashed_password.encode('utf-8') if isinstance(hashed_password, str) else hashed_password
+        if isinstance(hashed_password, str):
+            hashed_password_bytes = hashed_password.encode('utf-8')
+        else:
+            hashed_password_bytes = hashed_password
         return bcrypt.checkpw(plain_password_bytes, hashed_password_bytes)
     except ValueError:
         return False
@@ -52,7 +56,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if username is None:
             raise credentials_exception
     except JWTError:
-        raise credentials_exception
+        raise credentials_exception from None
         
     user = db.query(models.User).filter(models.User.username == username).first()
     if user is None:

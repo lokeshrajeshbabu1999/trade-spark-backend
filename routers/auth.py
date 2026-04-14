@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from db import get_db
 import models
 import security
+from db import get_db
 
 router = APIRouter(
     prefix="/auth",
@@ -12,7 +12,10 @@ router = APIRouter(
 )
 
 @router.post("/token")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+):
     """Receives email/password from the React login screen and returns a JWT if valid"""
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     

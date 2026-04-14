@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Optional
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 # --- USER SCHEMAS (Validation for Authentication) ---
 class UserBase(BaseModel):
@@ -33,7 +34,8 @@ class OrderCreate(BaseModel):
     symbol: str
     side: str # Expects 'BUY' or 'SELL'
     quantity: float
-    # We don't ask the user for 'price' because the server fetches the real market price to prevent cheating!
+    # We don't ask the user for 'price' because the server fetches the real 
+    # market price to prevent cheating!
 
 class OrderResponse(BaseModel):
     id: int

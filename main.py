@@ -1,12 +1,13 @@
+import asyncio
+
+import yfinance as yf
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-import asyncio
-import yfinance as yf
 
 # Import our new database modules
 import models
 from db import engine
-from routers import trade, user, auth
+from routers import auth, trade, user
 
 # Automatically create all SQL tables if PostgreSQL is connected
 if engine:
@@ -85,7 +86,8 @@ async def websocket_endpoint(websocket: WebSocket, symbol: str):
                 "price": round(current_price, 2)
             })
             
-            # Wait 3 seconds before next tick (yfinance will rate-limit us if we do 1 second)
+            # Wait 3 seconds before next tick (yfinance will rate-limit
+            # us if we do 1 second)
             await asyncio.sleep(3)
             
     except Exception as e:

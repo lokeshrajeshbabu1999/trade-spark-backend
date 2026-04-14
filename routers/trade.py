@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List
 import yfinance as yf
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-from db import get_db
 import models
 import schemas
 import security
+from db import get_db
 
 router = APIRouter(
     prefix="/trade",
@@ -14,7 +13,11 @@ router = APIRouter(
 )
 
 @router.post("/execute", response_model=schemas.OrderResponse)
-def execute_trade(order: schemas.OrderCreate, current_user: models.User = Depends(security.get_current_user), db: Session = Depends(get_db)):
+def execute_trade(
+    order: schemas.OrderCreate, 
+    current_user: models.User = Depends(security.get_current_user), 
+    db: Session = Depends(get_db)
+):
     """Executes a real paper trade securely linked to the authenticated user's JWT token"""
     
     ticker = yf.Ticker(order.symbol)
@@ -30,7 +33,10 @@ def execute_trade(order: schemas.OrderCreate, current_user: models.User = Depend
             
     # 3. Raise error if price is still completely unavailable
     if execution_price is None:
-        raise HTTPException(status_code=400, detail=f"Invalid stock symbol or no data available for {order.symbol}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid stock symbol or no data available for {order.symbol}"
+        )
             
     total_cost = execution_price * order.quantity
     
@@ -48,9 +54,11 @@ def execute_trade(order: schemas.OrderCreate, current_user: models.User = Depend
             total_value = (position.quantity * position.avg_price) + total_cost
             position.quantity += order.quantity
             position.avg_price = total_value / position.quantity
-        else:
             new_position = models.Position(
-                symbol=order.symbol, quantity=order.quantity, avg_price=execution_price, owner_id=current_user.id
+                symbol=order.symbol, 
+                quantity=order.quantity, 
+                avg_price=execution_price, 
+                owner_id=current_user.id
             )
             db.add(new_position)
             
@@ -78,10 +86,19 @@ def execute_trade(order: schemas.OrderCreate, current_user: models.User = Depend
     return new_order
 
 @router.get("/portfolio")
-def get_portfolio(current_user: models.User = Depends(security.get_current_user), db: Session = Depends(get_db)):
+def get_portfolio(
+    current_user: models.User = Depends(security.get_current_user), 
+    db: Session = Depends(get_db)
+):
     """Returns holdings and order history securely for the authenticated JWT user"""
     positions = db.query(models.Position).filter(models.Position.owner_id == current_user.id).all()
-    orders = db.query(models.Order).filter(models.Order.owner_id == current_user.id).order_by(models.Order.timestamp.desc()).limit(50).all()
+    orders = (
+        db.query(models.Order)
+        .filter(models.Order.owner_id == current_user.id)
+        .order_by(models.Order.timestamp.desc())
+        .limit(50)
+        .all()
+    )
     
     return {
         "balance": current_user.balance,
@@ -173,10 +190,13 @@ def get_historical_data(symbol: str, period: str = "1mo", interval: str = "1d"):
                 "volume": int(row['Volume'])
             })
             
-        print(f"[YFinance REST Log] Fetched {len(history_list)} data points for {symbol} ({period}/{interval})")
+        print(
+            f"[YFinance REST Log] Fetched {len(history_list)} data points "
+            f"for {symbol} ({period}/{interval})"
+        )
         return {"symbol": symbol.upper(), "data": history_list}
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
