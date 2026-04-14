@@ -30,7 +30,7 @@ jobs:
         run: bandit -r .
 
       - name: Run Tests
-        run: pytest
+        run: python -m pytest
 
   infrastructure:
     name: Terraform Deployment
