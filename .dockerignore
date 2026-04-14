@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+.git/
+.github/
+.vscode/
+terraform/
+.terraform/
+*.tfstate
+*.tfstate.backup
+tests/
+README.md
+implementation_plan.md
+task.md

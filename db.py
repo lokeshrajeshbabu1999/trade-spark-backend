@@ -1,12 +1,14 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# 🔴 IMPORTANT: This expects you to have PostgreSQL installed on your computer.
-# It expects a database user 'postgres' with password 'password', 
-# and a database named 'tradespark'. 
-# You can change these credentials to match your local setup.
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:12345@localhost:5432/tradespark"
+# 🔴 IMPORTANT: In local development, this expects PostgreSQL or falls back to SQLite.
+# In production (AWS), this will be provided by an environment variable.
+SQLALCHEMY_DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "sqlite:///./test.db"
+)
 
 try:
     engine = create_engine(SQLALCHEMY_DATABASE_URL)

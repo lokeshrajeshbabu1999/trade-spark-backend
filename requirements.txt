@@ -6,3 +6,9 @@ yfinance
 passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
+
+# Development & CI
+ruff
+bandit
+pytest
+httpx

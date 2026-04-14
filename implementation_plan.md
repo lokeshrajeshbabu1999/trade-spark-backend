@@ -77,3 +77,153 @@ We will write a small React component in your frontend to connect to the Python 
 
 
 .\venv\Scripts\uvicorn main:app --reload
+
+
+
+
+
+
+
+
+
+
+
+
+# Frontend-Backend Integration Plan
+
+This plan outlines the steps to tear out the frontend mock data (`mockData.ts`) and fully connect the React application to your newly built FastAPI backend for live prices, historical charts, and real paper trading execution.
+
+> [!CAUTION]
+> This requires removing the existing `mockData` reliance across all of your pages, which means the app will rely entirely on the backend server running to function.
+
+## Proposed Changes
+
+### Backend Refinements
+The backend is mostly ready, but we need one small change to make charts and streams dynamic.
+
+#### [MODIFY] `c:\Users\Admin\workspace\trade-spark-backend\main.py`
+Currently, the WebSocket route `ws://localhost:8000/ws/price_stream` hardcodes `symbol = "AAPL"`. We will modify the URL to `/ws/price_stream/{symbol}` so the frontend can stream live data for any stock the user clicks on.
+
+---
+
+### Frontend Services
+
+#### [MODIFY] `c:\Users\Admin\workspace\trade-spark\src\services\api.ts`
+Add the new functions corresponding to our recently created backend endpoints:
+- `getLivePrice(symbol: string)` -> calls `GET /trade/price/{symbol}`
+- `getHistoricalData(symbol: string, period?: string, interval?: string)` -> calls `GET /trade/history/{symbol}`
+
+#### [MODIFY] `c:\Users\Admin\workspace\trade-spark\src\hooks\useLivePrice.ts`
+Update the hook setup to connect dynamically to the newly parameterized backend URL (e.g., `ws://localhost:8000/ws/price_stream/${symbol}`).
+
+---
+
+### Frontend UI Components 
+
+#### [MODIFY] `c:\Users\Admin\workspace\trade-spark\src\pages\StockDetail.tsx`
+- **Tear out `mockData.ts`**: Replace `generatePriceHistory(stock.price)` with a React hook (like `useEffect` or `react-query`) that calls `apiService.getHistoricalData(symbol)`.
+- **Integrate WebSockets**: Implement the `useLivePrice` hook here to dynamically update the top price display in real-time as WebSocket ticks come in.
+- **Render Real Charts**: Map the data from `getHistoricalData` (which has `time, open, high, low, close, volume`) directly into the existing `recharts` `<LineChart />` component.
+
+#### [MODIFY] `c:\Users\Admin\workspace\trade-spark\src\components\TradeModal.tsx`
+Ensure the BUY/SELL submission button utilizes `apiService.executeTrade` and passes the user’s JWT token safely, replacing the mock local context.
+
+## Open Questions
+
+> [!WARNING]
+> 1. Your React app currently uses a Context (`TradingContext`) and Redux to manage state. Do you want me to wire up the API calls *inside* your existing Context/Redux actions, or should I fetch data directly within the components (like using standard `useEffect`)? 
+> 2. Are you ready for me to rip out the mock data permanently, or do you want to keep a toggle somewhere to switch back to mock mode if the python backend isn't running?
+
+## Verification Plan
+1. Start both the Vite frontend and Uvicorn backend.
+2. Click on a Stock Card (e.g., AAPL).
+3. Verify the Recharts graph visually renders 1-month historical data mapping real data.
+4. Watch the top screen price update automatically every 3 seconds via the WebSocket.
+5. Successfully execute a Buy order and see the backend confirm a position.
+
+
+
+# Backend CI/CD Pipeline Implementation Plan
+
+This plan outlines the steps to implement a "Big Company" style CI/CD pipeline for the Trade Spark backend. This follows cloud-native best practices using containerization and automated quality gates.
+
+## User Review Required
+
+> [!IMPORTANT]
+> - **GitHub Secrets**: To enable the "Push to Registry" parts of the pipeline, you will need to add secrets to your GitHub repository (e.g., `DOCKER_HUB_USERNAME`, `DOCKER_HUB_TOKEN`) or use the default `GITHUB_TOKEN` for GitHub Packages.
+> - **Database for Tests**: I recommend using an **SQLite In-Memory** database for CI tests to keep the pipeline fast and simple, while keeping Postgres for production.
+
+## Proposed Changes
+
+### 1. Dependency Updates
+We need to add tools for linting, security scanning, and testing.
+
+#### [MODIFY] [requirements.txt](file:///c:/Users/Admin/workspace/trade-spark-backend/requirements.txt)
+Add development/CI dependencies:
+- `ruff` (Linting & Formatting)
+- `bandit` (Security Scanning)
+- `pytest` (Unit Testing)
+- `httpx` (For testing FastAPI endpoints)
+
+---
+
+### 2. Quality Gate Configuration
+
+#### [NEW] [pyproject.toml](file:///c:/Users/Admin/workspace/trade-spark-backend/pyproject.toml)
+Configure `ruff` and `pytest` settings to ensure consistent code quality.
+
+---
+
+### 3. Automated Testing
+
+#### [NEW] `tests/` directory
+Create initial tests to verify the backend is healthy.
+
+#### [NEW] [test_main.py](file:///c:/Users/Admin/workspace/trade-spark-backend/tests/test_main.py)
+A basic test suite to check:
+- `GET /` (Health check)
+- Basic endpoint availability.
+
+---
+
+### 4. Containerization
+
+#### [NEW] [Dockerfile](file:///c:/Users/Admin/workspace/trade-spark-backend/Dockerfile)
+A production-ready Dockerfile:
+- **Base**: Python 3.11-slim.
+- **Security**: Non-root user.
+- **Server**: Uvicorn.
+
+#### [NEW] [.dockerignore](file:///c:/Users/Admin/workspace/trade-spark-backend/.dockerignore)
+Prevent bloating the image with `venv`, `__pycache__`, etc.
+
+---
+
+### 5. GitHub Actions Workflow
+
+#### [NEW] [.github/workflows/backend.yml](file:///c:/Users/Admin/workspace/trade-spark-backend/.github/workflows/backend.yml)
+The automated pipeline:
+1. **Lint Phase**: `ruff check` and `ruff format`.
+2. **Security Phase**: `bandit`.
+3. **Test Phase**: `pytest`.
+4. **Build Phase**: `docker build`.
+5. **Push Phase**: Push to GitHub Packages (GHCR) on `main` branch updates.
+
+---
+
+## Open Questions
+
+> [!WARNING]
+> 1. **Deployment Strategy**: Do you want me to include a "Manual" deployment step (click a button in GitHub Actions) or "Automatic" (deploys every time `main` is updated)?
+> 2. **Server Access**: For the CD phase (Step 2 in your original request), I'll need to know if you're using a specific provider (Oracle/Hetzner) so I can tailor the deployment script (e.g., SSH, Docker Compose pull, etc.).
+
+## Verification Plan
+
+### Automated Tests
+- Run `ruff check .` locally.
+- Run `pytest` locally.
+- Run `docker build -t trade-spark-backend .`
+
+### Manual Verification
+- Check the "Actions" tab on GitHub.
+- Verify the image appears in GitHub Packages.
