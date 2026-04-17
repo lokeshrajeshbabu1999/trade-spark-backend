@@ -17,7 +17,7 @@ module "ecr" {
 module "rds" {
   source          = "./modules/rds"
   project_name    = var.project_name
-  public_subnets  = module.vpc.public_subnets
+  private_subnets = module.vpc.private_subnets
   rds_sg_id       = module.security_groups.rds_sg_id
   db_name         = var.db_name
   db_username     = var.db_username
