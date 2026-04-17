@@ -7,7 +7,6 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-
 resource "aws_db_instance" "main" {
   allocated_storage      = 20
   db_name                = var.db_name
