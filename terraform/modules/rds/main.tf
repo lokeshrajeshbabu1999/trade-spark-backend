@@ -1,6 +1,6 @@
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = var.private_subnets
+  subnet_ids = var.public_subnets
 
   tags = {
     Name = "${var.project_name}-db-subnet-group"
@@ -18,7 +18,7 @@ resource "aws_db_instance" "main" {
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [var.rds_sg_id]
   skip_final_snapshot    = true # Set to false for production
-  publicly_accessible    = false
+  publicly_accessible    = true
 
   tags = {
     Name = "${var.project_name}-rds"
@@ -30,7 +30,7 @@ output "db_endpoint" {
 }
 
 variable "project_name" {}
-variable "private_subnets" { type = list(string) }
+variable "public_subnets" { type = list(string) }
 variable "rds_sg_id" {}
 variable "db_name" {}
 variable "db_username" {}
