@@ -78,7 +78,7 @@ We will write a small React component in your frontend to connect to the Python 
 
 .\venv\Scripts\uvicorn main:app --reload
 
-
+SecurePassword123!
 
 
 

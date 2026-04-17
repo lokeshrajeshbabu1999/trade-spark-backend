@@ -53,10 +53,20 @@ module "ecs" {
   db_name            = var.db_name
 }
 
+module "cloudfront" {
+  source       = "./modules/cloudfront"
+  project_name = var.project_name
+  alb_dns_name = module.alb.alb_dns_name
+}
+
 output "alb_dns_name" {
   value = module.alb.alb_dns_name
 }
 
 output "ecr_repository_url" {
   value = module.ecr.repository_url
+}
+
+output "cloudfront_url" {
+  value = "https://${module.cloudfront.cloudfront_domain_name}"
 }
