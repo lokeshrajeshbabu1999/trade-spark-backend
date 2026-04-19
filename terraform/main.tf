@@ -41,7 +41,7 @@ module "ecs" {
   source             = "./modules/ecs"
   project_name       = var.project_name
   aws_region         = var.aws_region
-  private_subnets    = module.vpc.private_subnets
+  public_subnets     = module.vpc.public_subnets
   ecs_sg_id          = module.security_groups.ecs_sg_id
   target_group_arn   = module.alb.target_group_arn
   execution_role_arn = module.iam.execution_role_arn

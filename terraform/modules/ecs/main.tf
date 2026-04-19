@@ -71,9 +71,9 @@ resource "aws_ecs_service" "main" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = var.private_subnets
+    subnets          = var.public_subnets
     security_groups  = [var.ecs_sg_id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -91,7 +91,7 @@ resource "aws_ecs_service" "main" {
 
 variable "project_name" {}
 variable "aws_region" {}
-variable "private_subnets" { type = list(string) }
+variable "public_subnets" { type = list(string) }
 variable "ecs_sg_id" {}
 variable "target_group_arn" {}
 variable "execution_role_arn" {}
