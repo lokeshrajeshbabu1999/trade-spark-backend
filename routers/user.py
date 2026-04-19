@@ -14,7 +14,7 @@ router = APIRouter(
 )
 
 @router.post(
-    "/", 
+    "", 
     response_model=schemas.UserResponse, 
     status_code=status.HTTP_201_CREATED
 )
@@ -46,7 +46,7 @@ def read_users_me(current_user: models.User = Depends(security.get_current_user)
     """Fetch the currently authenticated user based on their JWT token signature"""
     return current_user
 
-@router.get("/", response_model=List[schemas.UserResponse])
+@router.get("", response_model=List[schemas.UserResponse])
 def get_all_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Fetch a list of all registered users"""
     users = db.query(models.User).offset(skip).limit(limit).all()
