@@ -29,13 +29,6 @@ module "iam" {
   project_name = var.project_name
 }
 
-module "alb" {
-  source         = "./modules/alb"
-  project_name   = var.project_name
-  vpc_id         = module.vpc.vpc_id
-  public_subnets = module.vpc.public_subnets
-  alb_sg_id      = module.security_groups.alb_sg_id
-}
 
 module "ecs" {
   source             = "./modules/ecs"
@@ -43,7 +36,6 @@ module "ecs" {
   aws_region         = var.aws_region
   public_subnets     = module.vpc.public_subnets
   ecs_sg_id          = module.security_groups.ecs_sg_id
-  target_group_arn   = module.alb.target_group_arn
   execution_role_arn = module.iam.execution_role_arn
   task_role_arn      = module.iam.task_role_arn
   repository_url     = module.ecr.repository_url
@@ -53,20 +45,9 @@ module "ecs" {
   db_name            = var.db_name
 }
 
-module "cloudfront" {
-  source       = "./modules/cloudfront"
-  project_name = var.project_name
-  alb_dns_name = module.alb.alb_dns_name
-}
 
-output "alb_dns_name" {
-  value = module.alb.alb_dns_name
-}
 
 output "ecr_repository_url" {
   value = module.ecr.repository_url
 }
 
-output "cloudfront_url" {
-  value = "https://${module.cloudfront.cloudfront_domain_name}"
-}

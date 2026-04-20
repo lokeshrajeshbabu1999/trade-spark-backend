@@ -76,13 +76,7 @@ resource "aws_ecs_service" "main" {
     assign_public_ip = true
   }
 
-  load_balancer {
-    target_group_arn = var.target_group_arn
-    container_name   = "${var.project_name}-backend"
-    container_port   = 8000
-  }
 
-  depends_on = [var.target_group_arn]
 
   tags = {
     Name = "${var.project_name}-service"
@@ -93,7 +87,6 @@ variable "project_name" {}
 variable "aws_region" {}
 variable "public_subnets" { type = list(string) }
 variable "ecs_sg_id" {}
-variable "target_group_arn" {}
 variable "execution_role_arn" {}
 variable "task_role_arn" {}
 variable "repository_url" {}
