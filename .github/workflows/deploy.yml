@@ -96,11 +96,12 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Ensure Docker Compose plugin is installed on AL2023
-            if ! docker compose version &> /dev/null; then
+            # Ensure Docker Compose and Buildx plugins are installed on AL2023
+            if ! docker compose version &> /dev/null || ! docker buildx version | grep -q "v0.1[789]"; then
               sudo mkdir -p /usr/local/lib/docker/cli-plugins
               sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
-              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+              sudo curl -SL https://github.com/docker/buildx/releases/latest/download/buildx-v0.19.1.linux-amd64 -o /usr/local/lib/docker/cli-plugins/docker-buildx
+              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-buildx
             fi
 
             # Locate the app directory (sometimes scp-action nests it)

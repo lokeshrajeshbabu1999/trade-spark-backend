@@ -48,11 +48,17 @@ resource "aws_instance" "server" {
               systemctl enable docker
               usermod -a -G docker ec2-user
 
-              # Install Docker Compose as a plugin
+              # Install Docker Compose and Buildx as plugins
               DOCKER_CONFIG=/usr/local/lib/docker
               mkdir -p $DOCKER_CONFIG/cli-plugins
+              
+              # Download latest Compose
               curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-              chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+              
+              # Download latest Buildx (v0.17+ required)
+              curl -SL https://github.com/docker/buildx/releases/latest/download/buildx-v0.19.1.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
+              
+              chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose $DOCKER_CONFIG/cli-plugins/docker-buildx
 
               # Note: For full automation, we would pull the git repo here.
               # For now, this sets up the environment.
