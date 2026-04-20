@@ -96,7 +96,10 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Ensure Docker plugins are installed
+            sudo dnf install -y docker-buildx-plugin docker-compose-plugin
+            
             cd /home/ec2-user/app
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            /usr/local/bin/docker-compose down
-            /usr/local/bin/docker-compose up -d --build
+            docker compose down
+            docker compose up -d --build
