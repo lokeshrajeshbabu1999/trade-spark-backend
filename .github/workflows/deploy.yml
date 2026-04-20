@@ -96,10 +96,12 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Ensure Docker plugins are installed
-            sudo dnf install -y docker-buildx-plugin docker-compose-plugin
-            
-            cd /home/ec2-user/app
+            # Ensure Docker Compose plugin is installed on AL2023
+            if ! docker compose version; then
+              sudo mkdir -p /usr/local/lib/docker/cli-plugins
+              sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+              sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+            fi
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             docker compose down
             docker compose up -d --build
