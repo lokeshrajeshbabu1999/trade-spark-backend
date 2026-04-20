@@ -97,11 +97,23 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             # Ensure Docker Compose plugin is installed on AL2023
-            if ! docker compose version; then
+            if ! docker compose version &> /dev/null; then
               sudo mkdir -p /usr/local/lib/docker/cli-plugins
               sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
               sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
             fi
+
+            # Locate the app directory (sometimes scp-action nests it)
+            cd /home/ec2-user/app
+            if [ ! -f "docker-compose.yml" ]; then
+              echo "File not found in /home/ec2-user/app, searching subdirectories..."
+              TARGET_DIR=$(find /home/ec2-user/app -name "docker-compose.yml" -printf '%h' -quit)
+              if [ -n "$TARGET_DIR" ]; then
+                cd "$TARGET_DIR"
+                echo "Found docker-compose.yml in $TARGET_DIR"
+              fi
+            fi
+
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            docker compose down
+            docker compose down || true
             docker compose up -d --build
