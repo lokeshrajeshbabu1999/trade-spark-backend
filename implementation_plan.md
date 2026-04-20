@@ -71,8 +71,6 @@ We will write a small React component in your frontend to connect to the Python 
 4.  Verify that the frontend successfully connects to the backend WebSocket and displays live streaming numbers.
 
 
-
-
 .\venv\Scripts\pip install -r requirements.txt
 
 
