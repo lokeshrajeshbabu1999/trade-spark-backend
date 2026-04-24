@@ -27,7 +27,14 @@ app.include_router(trade.router)
 # Allow the frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8080", 
+        "http://127.0.0.1:8080",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://trade-spark-frontend-lokesh.s3-website.ap-south-1.amazonaws.com",
+        "https://tradespark.vercel.app", 
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
