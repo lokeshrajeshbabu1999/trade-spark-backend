@@ -13,10 +13,11 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: str
-    cash_balance: float
-    total_invested_value: float
-    realized_pnl: float
-    deposited_capital: float
+    cash_balance: float = 1000000.0
+    balance: float = 1000000.0
+    total_invested_value: float = 0.0
+    realized_pnl: float = 0.0
+    deposited_capital: float = 1000000.0
     created_at: datetime
     
     class Config:

@@ -27,6 +27,10 @@ class User(Base):
     positions = relationship("Position", back_populates="owner")
     orders = relationship("Order", back_populates="owner")
 
+    @property
+    def balance(self):
+        return self.cash_balance
+
 class Position(Base):
     """Tracks currently held stocks for a user"""
     __tablename__ = "positions"

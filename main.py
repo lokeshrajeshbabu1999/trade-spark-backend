@@ -27,7 +27,11 @@ app.include_router(trade.router)
 # Allow the frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8080", 
+        "http://127.0.0.1:8080",
+        "https://tradespark.vercel.app", # Adding Vercel fallback if you use it
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
