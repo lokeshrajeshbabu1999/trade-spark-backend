@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from typing import List
 from pydantic import BaseModel
 
 
@@ -13,7 +13,10 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: str
-    balance: float
+    cash_balance: float
+    total_invested_value: float
+    realized_pnl: float
+    deposited_capital: float
     created_at: datetime
     
     class Config:
@@ -48,3 +51,15 @@ class OrderResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class PortfolioSummary(BaseModel):
+    cash_balance: float
+    total_invested_value: float # Cost basis of open positions
+    current_holdings_value: float # Market value of open positions
+    total_portfolio_value: float # Cash + Market Value
+    unrealized_pnl: float
+    realized_pnl: float
+    pnl_percentage: float
+    win_rate: float
+    positions: List[PositionResponse]
+    orders: List[OrderResponse]

@@ -118,3 +118,7 @@ jobs:
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             docker compose down || true
             docker compose up -d --build
+
+            # Run database migrations
+            echo "Running database migrations..."
+            docker compose exec -T backend alembic upgrade head

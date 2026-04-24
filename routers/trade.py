@@ -39,8 +39,9 @@ def execute_trade(
         )
             
     total_cost = execution_price * order.quantity
+    profit = 0.0
     
-    if order.side == "BUY" and current_user.balance < total_cost:
+    if order.side == "BUY" and current_user.cash_balance < total_cost:
         raise HTTPException(status_code=400, detail="Insufficient virtual funds")
         
     position = db.query(models.Position).filter(
@@ -49,11 +50,17 @@ def execute_trade(
     ).first()
     
     if order.side == "BUY":
-        current_user.balance -= total_cost
+        # 1. Update User Financials
+        current_user.cash_balance -= total_cost
+        current_user.total_invested_value += total_cost
+        
+        # 2. Update or Create Position
         if position:
+            # Weighted average price update
             total_value = (position.quantity * position.avg_price) + total_cost
             position.quantity += order.quantity
             position.avg_price = total_value / position.quantity
+        else:
             new_position = models.Position(
                 symbol=order.symbol, 
                 quantity=order.quantity, 
@@ -65,9 +72,20 @@ def execute_trade(
     elif order.side == "SELL":
         if not position or position.quantity < order.quantity:
             raise HTTPException(status_code=400, detail="Insufficient shares to sell")
-        current_user.balance += total_cost
+        
+        # 1. Calculate proceeds and cost basis for the sold portion
+        proceeds = execution_price * order.quantity
+        cost_basis_of_sold_shares = position.avg_price * order.quantity
+        profit = proceeds - cost_basis_of_sold_shares
+        
+        # 2. Update User Financials
+        current_user.cash_balance += proceeds
+        current_user.total_invested_value -= cost_basis_of_sold_shares
+        current_user.realized_pnl += profit
+        
+        # 3. Update Position
         position.quantity -= order.quantity
-        if position.quantity == 0:
+        if position.quantity <= 0:
             db.delete(position)
             
     new_order = models.Order(
@@ -75,6 +93,7 @@ def execute_trade(
         side=order.side,
         quantity=order.quantity,
         price=execution_price,
+        profit=profit if order.side == "SELL" else 0.0,
         status="FILLED",
         owner_id=current_user.id
     )
@@ -85,25 +104,74 @@ def execute_trade(
     
     return new_order
 
-@router.get("/portfolio")
+@router.get("/portfolio", response_model=schemas.PortfolioSummary)
 def get_portfolio(
     current_user: models.User = Depends(security.get_current_user), 
     db: Session = Depends(get_db)
 ):
-    """Returns holdings and order history securely for the authenticated JWT user"""
+    """Returns holdings and detailed financial summary securely for the authenticated user"""
     positions = db.query(models.Position).filter(models.Position.owner_id == current_user.id).all()
-    orders = (
-        db.query(models.Order)
-        .filter(models.Order.owner_id == current_user.id)
-        .order_by(models.Order.timestamp.desc())
-        .limit(50)
-        .all()
-    )
+    
+    # 1. Calculate Market Value of current holdings
+    current_holdings_value = 0.0
+    for pos in positions:
+        try:
+            ticker = yf.Ticker(pos.symbol)
+            # Try to get live price, fallback to position avg_price if lookup fails
+            price = getattr(ticker.fast_info, 'lastPrice', None)
+            if price is None:
+                data = ticker.history(period="1d")
+                if not data.empty:
+                    price = float(data['Close'].iloc[-1])
+            
+            if price is not None:
+                current_holdings_value += (price * pos.quantity)
+            else:
+                current_holdings_value += (pos.avg_price * pos.quantity)
+        except Exception:
+            current_holdings_value += (pos.avg_price * pos.quantity)
+
+    # 2. Portfolio Calculations
+    total_portfolio_value = current_user.cash_balance + current_holdings_value
+    unrealized_pnl = current_holdings_value - current_user.total_invested_value
+    
+    pnl_percentage = 0.0
+    if current_user.total_invested_value and current_user.total_invested_value != 0:
+        pnl_percentage = (unrealized_pnl / current_user.total_invested_value) * 100
+
+    # 3. Win Rate Calculation (Percentage of profitable SELL orders)
+    all_orders = db.query(models.Order).filter(
+        models.Order.owner_id == current_user.id,
+        models.Order.status == "FILLED"
+    ).all()
+    
+    sell_orders = [o for o in all_orders if o.side == "SELL"]
+    win_rate = 0.0
+    if sell_orders:
+        winning_trades = len([o for o in sell_orders if o.profit > 0])
+        win_rate = (winning_trades / len(sell_orders)) * 100
+
+    # 4. Recent Orders (limit to 50)
+    recent_orders = sorted(all_orders, key=lambda x: x.timestamp, reverse=True)[:50]
     
     return {
-        "balance": current_user.balance,
-        "positions": positions,
-        "orders": orders
+        "cash_balance": round(current_user.cash_balance, 2),
+        "total_invested_value": round(current_user.total_invested_value, 2),
+        "current_holdings_value": round(current_holdings_value, 2),
+        "total_portfolio_value": round(total_portfolio_value, 2),
+        "unrealized_pnl": round(unrealized_pnl, 2),
+        "realized_pnl": round(current_user.realized_pnl, 2),
+        "pnl_percentage": round(pnl_percentage, 2),
+        "win_rate": round(win_rate, 2),
+        "positions": [
+            {
+                "id": p.id,
+                "symbol": p.symbol.replace(".NS", "").replace(".BO", ""), # Clean symbol for UI
+                "quantity": p.quantity,
+                "avg_price": round(p.avg_price, 2)
+            } for p in positions
+        ],
+        "orders": recent_orders
     }
 
 @router.get("/price/{symbol}")

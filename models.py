@@ -15,8 +15,12 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     
-    # Everyone gets $100,000 in paper trading money!
-    balance = Column(Float, default=100000.0) 
+    # Paper Trading Financials
+    cash_balance = Column(Float, default=1000000.0) 
+    total_invested_value = Column(Float, default=0.0)
+    realized_pnl = Column(Float, default=0.0)
+    deposited_capital = Column(Float, default=1000000.0)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships mapping to other tables
@@ -44,6 +48,7 @@ class Order(Base):
     side = Column(String) # "BUY" or "SELL"
     quantity = Column(Float)
     price = Column(Float) # executed price
+    profit = Column(Float, default=0.0) # realized profit/loss for SELL orders
     status = Column(String) # "FILLED" or "REJECTED"
     timestamp = Column(DateTime, default=datetime.utcnow)
     owner_id = Column(String, ForeignKey("users.id"))

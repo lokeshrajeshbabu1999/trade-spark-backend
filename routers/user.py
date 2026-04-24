@@ -32,7 +32,8 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         username=user.username,
         hashed_password=hashed_password,
-        balance=100000.0 # Paper Trading Account starts with 100k
+        cash_balance=1000000.0,
+        deposited_capital=1000000.0
     )
     
     db.add(new_user)
