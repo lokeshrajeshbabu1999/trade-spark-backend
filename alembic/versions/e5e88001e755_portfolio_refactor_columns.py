@@ -20,19 +20,32 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # 1. Add new columns
-    op.add_column('orders', sa.Column('profit', sa.Float(), nullable=True))
-    op.add_column('users', sa.Column('cash_balance', sa.Float(), nullable=True))
-    op.add_column('users', sa.Column('total_invested_value', sa.Float(), nullable=True))
-    op.add_column('users', sa.Column('realized_pnl', sa.Float(), nullable=True))
-    op.add_column('users', sa.Column('deposited_capital', sa.Float(), nullable=True))
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
     
-    # 2. Data Migration: Preserve existing user balances
-    op.execute("UPDATE users SET cash_balance = balance, deposited_capital = balance")
+    # 1. Add new columns safely
+    order_cols = [c['name'] for c in inspector.get_columns('orders')]
+    if 'profit' not in order_cols:
+        op.add_column('orders', sa.Column('profit', sa.Float(), nullable=True))
+        
+    user_cols = [c['name'] for c in inspector.get_columns('users')]
+    if 'cash_balance' not in user_cols:
+        op.add_column('users', sa.Column('cash_balance', sa.Float(), nullable=True))
+    if 'total_invested_value' not in user_cols:
+        op.add_column('users', sa.Column('total_invested_value', sa.Float(), nullable=True))
+    if 'realized_pnl' not in user_cols:
+        op.add_column('users', sa.Column('realized_pnl', sa.Float(), nullable=True))
+    if 'deposited_capital' not in user_cols:
+        op.add_column('users', sa.Column('deposited_capital', sa.Float(), nullable=True))
+    
+    # 2. Data Migration: Preserve existing user balances (only if 'balance' still exists)
+    if 'balance' in user_cols:
+        op.execute("UPDATE users SET cash_balance = balance, deposited_capital = balance")
     
     # 3. Drop old column safely
-    with op.batch_alter_table('users') as batch_op:
-        batch_op.drop_column('balance')
+    if 'balance' in user_cols:
+        with op.batch_alter_table('users') as batch_op:
+            batch_op.drop_column('balance')
 
 
 def downgrade() -> None:
