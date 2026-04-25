@@ -30,6 +30,7 @@ class PositionResponse(BaseModel):
     symbol: str
     quantity: float
     avg_price: float
+    product_type: str
     
     class Config:
         from_attributes = True
@@ -39,6 +40,7 @@ class OrderCreate(BaseModel):
     symbol: str
     side: str # Expects 'BUY' or 'SELL'
     quantity: float
+    product_type: str = "NORMAL" # "NORMAL" or "INTRADAY"
     # We don't ask the user for 'price' because the server fetches the real 
     # market price to prevent cheating!
 
@@ -49,6 +51,7 @@ class OrderResponse(BaseModel):
     quantity: float
     price: float
     status: str
+    product_type: str
     timestamp: datetime
     
     class Config:

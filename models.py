@@ -39,6 +39,7 @@ class Position(Base):
     symbol = Column(String, index=True) # e.g. 'AAPL'
     quantity = Column(Float, default=0.0)
     avg_price = Column(Float, default=0.0)
+    product_type = Column(String, default="NORMAL") # "NORMAL" or "INTRADAY"
     owner_id = Column(String, ForeignKey("users.id"))
     
     owner = relationship("User", back_populates="positions")
@@ -53,7 +54,8 @@ class Order(Base):
     quantity = Column(Float)
     price = Column(Float) # executed price
     profit = Column(Float, default=0.0) # realized profit/loss for SELL orders
-    status = Column(String) # "FILLED" or "REJECTED"
+    status = Column(String, default="EXECUTED") # "EXECUTED", "PENDING", or "REJECTED"
+    product_type = Column(String, default="NORMAL") # "NORMAL" or "INTRADAY"
     timestamp = Column(DateTime, default=datetime.utcnow)
     owner_id = Column(String, ForeignKey("users.id"))
     

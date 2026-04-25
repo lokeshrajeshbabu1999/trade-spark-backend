@@ -46,7 +46,8 @@ def execute_trade(
         
     position = db.query(models.Position).filter(
         models.Position.owner_id == current_user.id, 
-        models.Position.symbol == order.symbol
+        models.Position.symbol == order.symbol,
+        models.Position.product_type == order.product_type
     ).first()
     
     if order.side == "BUY":
@@ -65,6 +66,7 @@ def execute_trade(
                 symbol=order.symbol, 
                 quantity=order.quantity, 
                 avg_price=execution_price, 
+                product_type=order.product_type,
                 owner_id=current_user.id
             )
             db.add(new_position)
@@ -94,7 +96,8 @@ def execute_trade(
         quantity=order.quantity,
         price=execution_price,
         profit=profit if order.side == "SELL" else 0.0,
-        status="FILLED",
+        status="EXECUTED",
+        product_type=order.product_type,
         owner_id=current_user.id
     )
     db.add(new_order)
@@ -142,7 +145,7 @@ def get_portfolio(
     # 3. Win Rate Calculation (Percentage of profitable SELL orders)
     all_orders = db.query(models.Order).filter(
         models.Order.owner_id == current_user.id,
-        models.Order.status == "FILLED"
+        models.Order.status == "EXECUTED"
     ).all()
     
     sell_orders = [o for o in all_orders if o.side == "SELL"]
@@ -168,7 +171,8 @@ def get_portfolio(
                 "id": p.id,
                 "symbol": p.symbol.replace(".NS", "").replace(".BO", ""), # Clean symbol for UI
                 "quantity": p.quantity,
-                "avg_price": round(p.avg_price, 2)
+                "avg_price": round(p.avg_price, 2),
+                "product_type": p.product_type
             } for p in positions
         ],
         "orders": recent_orders
