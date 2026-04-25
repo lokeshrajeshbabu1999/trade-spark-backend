@@ -78,15 +78,6 @@ We will write a small React component in your frontend to connect to the Python 
 
 SecurePassword123!
 
-
-
-
-
-
-
-
-
-
 # Frontend-Backend Integration Plan
 
 This plan outlines the steps to tear out the frontend mock data (`mockData.ts`) and fully connect the React application to your newly built FastAPI backend for live prices, historical charts, and real paper trading execution.
