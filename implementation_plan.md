@@ -78,6 +78,10 @@ We will write a small React component in your frontend to connect to the Python 
 
 SecurePassword123!
 
+# This wipes all your existing tables and schemas
+docker exec trade-spark-db psql -U postgres -d tradespark -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+
 # Frontend-Backend Integration Plan
 
 This plan outlines the steps to tear out the frontend mock data (`mockData.ts`) and fully connect the React application to your newly built FastAPI backend for live prices, historical charts, and real paper trading execution.

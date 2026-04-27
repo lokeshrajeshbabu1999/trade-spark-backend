@@ -117,7 +117,10 @@ def get_portfolio(
     
     # 1. Calculate Market Value of current holdings
     current_holdings_value = 0.0
+    position_data = []
+
     for pos in positions:
+        price = None
         try:
             ticker = yf.Ticker(pos.symbol)
             # Try to get live price, fallback to position avg_price if lookup fails
@@ -126,13 +129,33 @@ def get_portfolio(
                 data = ticker.history(period="1d")
                 if not data.empty:
                     price = float(data['Close'].iloc[-1])
-            
-            if price is not None:
-                current_holdings_value += (price * pos.quantity)
-            else:
-                current_holdings_value += (pos.avg_price * pos.quantity)
         except Exception:
-            current_holdings_value += (pos.avg_price * pos.quantity)
+            pass
+
+        if price is None:
+            price = pos.avg_price
+            
+        market_value = price * pos.quantity
+        current_holdings_value += market_value
+        unrealized_pnl = market_value - (pos.avg_price * pos.quantity)
+
+        position_data.append({
+            "id": pos.id,
+            "symbol": pos.symbol.replace(".NS", "").replace(".BO", ""), # Clean symbol for UI
+            "quantity": pos.quantity,
+            "avg_price": round(pos.avg_price, 2),
+            "product_type": pos.product_type,
+            "live_price": round(price, 2),
+            "market_value": round(market_value, 2),
+            "unrealized_pnl": round(unrealized_pnl, 2)
+        })
+
+    # Add weight percentage
+    for p_data in position_data:
+        if current_holdings_value > 0:
+            p_data["weight_percentage"] = round((p_data["market_value"] / current_holdings_value) * 100, 1)
+        else:
+            p_data["weight_percentage"] = 0.0
 
     # 2. Portfolio Calculations
     total_portfolio_value = current_user.cash_balance + current_holdings_value
@@ -166,15 +189,7 @@ def get_portfolio(
         "realized_pnl": round(current_user.realized_pnl, 2),
         "pnl_percentage": round(pnl_percentage, 2),
         "win_rate": round(win_rate, 2),
-        "positions": [
-            {
-                "id": p.id,
-                "symbol": p.symbol.replace(".NS", "").replace(".BO", ""), # Clean symbol for UI
-                "quantity": p.quantity,
-                "avg_price": round(p.avg_price, 2),
-                "product_type": p.product_type
-            } for p in positions
-        ],
+        "positions": position_data,
         "orders": recent_orders
     }
 

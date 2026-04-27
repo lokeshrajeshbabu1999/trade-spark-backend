@@ -31,6 +31,10 @@ class PositionResponse(BaseModel):
     quantity: float
     avg_price: float
     product_type: str
+    live_price: float = 0.0
+    market_value: float = 0.0
+    weight_percentage: float = 0.0
+    unrealized_pnl: float = 0.0
     
     class Config:
         from_attributes = True
