@@ -113,16 +113,49 @@ def get_portfolio(
     db: Session = Depends(get_db)
 ):
     """Returns holdings and detailed financial summary securely for the authenticated user"""
-    positions = db.query(models.Position).filter(models.Position.owner_id == current_user.id).all()
+    # 1. Fetch all executed orders first to derive dynamic holdings
+    all_orders = db.query(models.Order).filter(
+        models.Order.owner_id == current_user.id,
+        models.Order.status == "EXECUTED"
+    ).all()
+
+    # 2. Derive holdings from the full order log
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for o in all_orders:
+        grouped[(o.symbol, o.product_type)].append(o)
+        
+    dynamic_positions = []
+    pos_id_counter = 1
     
-    # 1. Calculate Market Value of current holdings
+    for (symbol, product_type), stock_orders in grouped.items():
+        # calcNetQty
+        qty = sum(o.quantity if o.side == "BUY" else -o.quantity for o in stock_orders)
+        if qty <= 0:
+            continue
+            
+        # calcAvgBuyPrice (FIFO / simple weighted average of all BUY orders)
+        buys = [o for o in stock_orders if o.side == "BUY"]
+        total_qty = sum(o.quantity for o in buys)
+        avg_price = sum(o.quantity * o.price for o in buys) / total_qty if total_qty > 0 else 0
+        
+        dynamic_positions.append({
+            "id": pos_id_counter,
+            "symbol": symbol,
+            "quantity": qty,
+            "avg_price": avg_price,
+            "product_type": product_type
+        })
+        pos_id_counter += 1
+
+    # 3. Calculate Market Value of current holdings
     current_holdings_value = 0.0
     position_data = []
 
-    for pos in positions:
+    for pos in dynamic_positions:
         price = None
         try:
-            ticker = yf.Ticker(pos.symbol)
+            ticker = yf.Ticker(pos["symbol"])
             # Try to get live price, fallback to position avg_price if lookup fails
             price = getattr(ticker.fast_info, 'lastPrice', None)
             if price is None:
@@ -133,18 +166,18 @@ def get_portfolio(
             pass
 
         if price is None:
-            price = pos.avg_price
+            price = pos["avg_price"]
             
-        market_value = price * pos.quantity
+        market_value = price * pos["quantity"]
         current_holdings_value += market_value
-        unrealized_pnl = market_value - (pos.avg_price * pos.quantity)
+        unrealized_pnl = market_value - (pos["avg_price"] * pos["quantity"])
 
         position_data.append({
-            "id": pos.id,
-            "symbol": pos.symbol.replace(".NS", "").replace(".BO", ""), # Clean symbol for UI
-            "quantity": pos.quantity,
-            "avg_price": round(pos.avg_price, 2),
-            "product_type": pos.product_type,
+            "id": pos["id"],
+            "symbol": pos["symbol"].replace(".NS", "").replace(".BO", ""), # Clean symbol for UI
+            "quantity": pos["quantity"],
+            "avg_price": round(pos["avg_price"], 2),
+            "product_type": pos["product_type"],
             "live_price": round(price, 2),
             "market_value": round(market_value, 2),
             "unrealized_pnl": round(unrealized_pnl, 2)
@@ -157,32 +190,29 @@ def get_portfolio(
         else:
             p_data["weight_percentage"] = 0.0
 
-    # 2. Portfolio Calculations
+    # 4. Portfolio Calculations
+    dynamic_invested_value = sum(pos["avg_price"] * pos["quantity"] for pos in dynamic_positions)
+    
     total_portfolio_value = current_user.cash_balance + current_holdings_value
-    unrealized_pnl = current_holdings_value - current_user.total_invested_value
+    unrealized_pnl = current_holdings_value - dynamic_invested_value
     
     pnl_percentage = 0.0
-    if current_user.total_invested_value and current_user.total_invested_value != 0:
-        pnl_percentage = (unrealized_pnl / current_user.total_invested_value) * 100
+    if dynamic_invested_value > 0:
+        pnl_percentage = (unrealized_pnl / dynamic_invested_value) * 100
 
-    # 3. Win Rate Calculation (Percentage of profitable SELL orders)
-    all_orders = db.query(models.Order).filter(
-        models.Order.owner_id == current_user.id,
-        models.Order.status == "EXECUTED"
-    ).all()
-    
+    # 5. Win Rate Calculation (Percentage of profitable SELL orders)
     sell_orders = [o for o in all_orders if o.side == "SELL"]
     win_rate = 0.0
     if sell_orders:
         winning_trades = len([o for o in sell_orders if o.profit > 0])
         win_rate = (winning_trades / len(sell_orders)) * 100
 
-    # 4. Recent Orders (limit to 50)
+    # 6. Recent Orders (limit to 50)
     recent_orders = sorted(all_orders, key=lambda x: x.timestamp, reverse=True)[:50]
     
     return {
         "cash_balance": round(current_user.cash_balance, 2),
-        "total_invested_value": round(current_user.total_invested_value, 2),
+        "total_invested_value": round(dynamic_invested_value, 2),
         "current_holdings_value": round(current_holdings_value, 2),
         "total_portfolio_value": round(total_portfolio_value, 2),
         "unrealized_pnl": round(unrealized_pnl, 2),
