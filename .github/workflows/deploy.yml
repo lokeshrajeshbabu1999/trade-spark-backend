@@ -65,7 +65,7 @@ jobs:
         working-directory: ./terraform
         run: |
           terraform apply -auto-approve
-          IP=$(terraform output -raw server_public_ip 2>/dev/null | tail -n 1 | tr -d '\r')
+          IP=$(terraform output -json | jq -r .server_public_ip.value)
           echo "server_ip=$IP" >> $GITHUB_OUTPUT
     
       - name: Set outputs
