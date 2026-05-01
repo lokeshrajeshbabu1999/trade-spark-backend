@@ -45,8 +45,10 @@ class OrderCreate(BaseModel):
     side: str # Expects 'BUY' or 'SELL'
     quantity: float
     product_type: str = "NORMAL" # "NORMAL" or "INTRADAY"
-    # We don't ask the user for 'price' because the server fetches the real 
-    # market price to prevent cheating!
+    order_type: str = "MARKET"
+    limit_price: Optional[float] = None
+    gtt_sl: Optional[float] = None
+    gtt_target: Optional[float] = None
 
 class OrderResponse(BaseModel):
     id: int
@@ -54,8 +56,13 @@ class OrderResponse(BaseModel):
     side: str
     quantity: float
     price: float
+    profit: float = 0.0
     status: str
     product_type: str
+    order_type: str
+    limit_price: Optional[float] = None
+    gtt_sl: Optional[float] = None
+    gtt_target: Optional[float] = None
     timestamp: datetime
     
     class Config:

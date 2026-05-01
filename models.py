@@ -56,6 +56,10 @@ class Order(Base):
     profit = Column(Float, default=0.0) # realized profit/loss for SELL orders
     status = Column(String, default="EXECUTED") # "EXECUTED", "PENDING", or "REJECTED"
     product_type = Column(String, default="NORMAL") # "NORMAL" or "INTRADAY"
+    order_type = Column(String, default="MARKET") # "MARKET" or "LIMIT"
+    limit_price = Column(Float, nullable=True)
+    gtt_sl = Column(Float, nullable=True)
+    gtt_target = Column(Float, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
     owner_id = Column(String, ForeignKey("users.id"))
     
