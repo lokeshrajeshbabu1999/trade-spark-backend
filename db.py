@@ -6,12 +6,12 @@ from sqlalchemy.orm import sessionmaker
 
 # 🔴 IMPORTANT: In local development, this expects PostgreSQL or falls back to SQLite.
 # In production (AWS), this will be provided by an environment variable.
-# SQLALCHEMY_DATABASE_URL = os.getenv(
-#     "DATABASE_URL", 
-#     "sqlite:///./test.db"
-# )
+SQLALCHEMY_DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "sqlite:///./test.db"
+)
 
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:12345@localhost:5432/tradespark"
+# SQLALCHEMY_DATABASE_URL = "postgresql://postgres:12345@localhost:5432/tradespark"
 
 try:
     engine = create_engine(SQLALCHEMY_DATABASE_URL)
