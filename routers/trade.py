@@ -219,6 +219,28 @@ def process_trade_execution(db: Session, current_user: models.User, order: schem
     
     return new_order
 
+@router.patch("/orders/{order_id}/gtt", response_model=schemas.OrderResponse)
+def update_gtt(
+    order_id: int,
+    gtt: schemas.GTTUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Updates GTT settings for an existing order"""
+    order = db.query(models.Order).filter(
+        models.Order.id == order_id, 
+        models.Order.owner_id == current_user.id
+    ).first()
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    order.gtt_sl = gtt.sl
+    order.gtt_target = gtt.target
+    db.commit()
+    db.refresh(order)
+    return order
+
 @router.get("/portfolio", response_model=schemas.PortfolioSummary)
 def get_portfolio(
     current_user: models.User = Depends(security.get_current_user), 

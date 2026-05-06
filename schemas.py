@@ -68,6 +68,13 @@ class OrderResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class GTTUpdate(BaseModel):
+    sl: Optional[float] = None
+    target: Optional[float] = None
+    
+    class Config:
+        from_attributes = True
+
 class PortfolioSummary(BaseModel):
     cash_balance: float
     total_invested_value: float # Cost basis of open positions
