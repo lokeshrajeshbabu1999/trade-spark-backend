@@ -97,6 +97,11 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Wait for cloud-init to finish (ensures docker is installed)
+            cloud-init status --wait || true
+            
+            sudo systemctl start docker || true
+
             # Ensure Docker Compose and Buildx plugins are installed on AL2023
             if ! docker compose version &> /dev/null || ! docker buildx version | grep -q "v0.1[789]"; then
               sudo mkdir -p /usr/local/lib/docker/cli-plugins
@@ -117,9 +122,9 @@ jobs:
             fi
 
             export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            docker compose down || true
-            docker compose up -d --build
+            sudo -E docker compose down || true
+            sudo -E docker compose up -d --build
 
             # Run database migrations
             echo "Running database migrations..."
-            docker compose exec -T backend alembic upgrade head
+            sudo -E docker compose exec -T backend alembic upgrade head
