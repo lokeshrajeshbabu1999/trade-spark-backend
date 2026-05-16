@@ -52,11 +52,12 @@ price_cache = {}
 
 def is_trading_open() -> bool:
     now = datetime.now().time()
-    return time(9, 15) <= now < time(15, 20)
+    return trade.MARKET_OPEN_TIME <= now < trade.INTRADAY_SQUARE_OFF_TIME
 
 
 def is_after_square_off_time() -> bool:
-    return datetime.now().time() >= time(15, 20)
+    # return datetime.now().time() >= trade.INTRADAY_SQUARE_OFF_TIME
+    return False # Disabled for testing
 
 async def fetch_real_price(symbol: str):
     """Fetches real price from Yahoo Finance without blocking the server."""

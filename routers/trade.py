@@ -1,4 +1,5 @@
 import yfinance as yf
+from datetime import datetime, time, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,8 @@ router = APIRouter(
 )
 
 INTRADAY_SHORT_MARGIN_RATE = 0.20
+MARKET_OPEN_TIME = time(9, 15)
+INTRADAY_SQUARE_OFF_TIME = time(9, 56)
 
 
 def normalize_market_symbol(symbol: str) -> str:
@@ -247,8 +250,12 @@ def get_portfolio(
     db: Session = Depends(get_db)
 ):
     """Returns holdings and detailed financial summary securely for the authenticated user"""
+    # Only show orders from yesterday and today
+    cutoff_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    
     all_orders = db.query(models.Order).filter(
-        models.Order.owner_id == current_user.id
+        models.Order.owner_id == current_user.id,
+        models.Order.timestamp >= cutoff_date
     ).all()
     executed_orders = [order for order in all_orders if order.status == "EXECUTED"]
 
